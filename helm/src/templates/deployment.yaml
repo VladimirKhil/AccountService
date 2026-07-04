@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "accountservice.fullname" . }}
+  labels:
+    app.kubernetes.io/name: {{ include "accountservice.name" . }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "accountservice.name" . }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ include "accountservice.name" . }}
+    spec:
+      containers:
+        - name: accountservice
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.service.port }}
+          env:
+            - name: ConnectionStrings__AccountService
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.secrets.existingSecret | quote }}
+                  key: {{ .Values.secrets.dbConnectionStringKey | quote }}
+            - name: Admin__ClientSecret
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.secrets.existingSecret | quote }}
+                  key: {{ .Values.secrets.adminClientSecretKey | quote }}
+            - name: Steam__ApiKey
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.secrets.existingSecret | quote }}
+                  key: {{ .Values.secrets.steamApiKeyKey | quote }}
+            - name: Steam__AppId
+              value: {{ .Values.accountService.steamAppId | quote }}
+            - name: Steam__Identity
+              value: {{ .Values.accountService.steamIdentity | quote }}
+            - name: Jwt__Issuer
+              value: {{ .Values.accountService.jwtIssuer | quote }}
+            - name: Jwt__Audience
+              value: {{ .Values.accountService.jwtAudience | quote }}
+            - name: Jwt__PrivateKeyPem
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.secrets.existingSecret | quote }}
+                  key: {{ .Values.secrets.jwtPrivateKeyPemKey | quote }}
+            - name: Jwt__PublicKeyPem
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.secrets.existingSecret | quote }}
+                  key: {{ .Values.secrets.jwtPublicKeyPemKey | quote }}

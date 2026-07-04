@@ -1,0 +1,40 @@
+replicaCount: 1
+
+image:
+  repository: vladimirkhil/accountservice
+  tag: latest
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 8080
+
+ingress:
+  enabled: false
+  className: ""
+  hosts:
+    - host: accountservice.local
+      paths:
+        - path: /
+          pathType: Prefix
+
+accountService:
+  steamAppId: "0"
+  steamIdentity: "account-service"
+  jwtIssuer: "AccountService"
+  jwtAudience: "AccountConsumers"
+
+secrets:
+  existingSecret: "accountservice-secrets"
+  dbConnectionStringKey: "connectionString"
+  adminClientSecretKey: "adminClientSecret"
+  steamApiKeyKey: "steamApiKey"
+  jwtPrivateKeyPemKey: "jwtPrivateKeyPem"
+  jwtPublicKeyPemKey: "jwtPublicKeyPem"
+
+postgres:
+  host: postgres
+  port: 5432
+  database: accountservice
+  username: postgres
+  password: postgres

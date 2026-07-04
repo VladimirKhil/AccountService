@@ -1,0 +1,16 @@
+<Project>
+  <PropertyGroup>
+    <Authors>Vladimir Khil</Authors
+    <Company>Khil-soft</Company>>
+    <Copyright>Copyright © Khil-soft 2026</Copyright>
+    <PackageProjectUrl>https://github.com/VladimirKhil/AccountService</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/VladimirKhil/AccountService</RepositoryUrl>
+    <LangVersion>latest</LangVersion>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <BaseIntermediateOutputPath>$(MSBuildThisFileDirectory)\obj\$(Platform).$(Configuration)\$(MSBuildProjectName)</BaseIntermediateOutputPath>
+    <OutputPath>$(MSBuildThisFileDirectory)\bin\$(Platform).$(Configuration)\$(MSBuildProjectName)</OutputPath>
+  </PropertyGroup>
+</Project>
