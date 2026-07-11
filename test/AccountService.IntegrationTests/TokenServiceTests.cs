@@ -1,12 +1,17 @@
 using AccountService.Configuration;
 using AccountService.Services;
 using FluentAssertions;
+using Microsoft.Extensions.FileProviders;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 
 namespace AccountService.IntegrationTests;
 
 public sealed class TokenServiceTests
 {
+    private static TokenService CreateDevelopmentTokenService(JwtOptions options)
+        => new(Options.Create(options), new TestHostEnvironment());
+
     [Fact]
     public void IssueAndValidate_ShouldReturnValidPrincipal()
     {
@@ -17,7 +22,7 @@ public sealed class TokenServiceTests
             ExpiresMinutes = 30,
         });
 
-        var service = new TokenService(options);
+        var service = CreateDevelopmentTokenService(options.Value);
         var userId = Guid.NewGuid();
         var jwtId = Guid.NewGuid().ToString("N");
 
@@ -35,23 +40,34 @@ public sealed class TokenServiceTests
     {
         var issuer = "same-issuer";
 
-        var tokenService = new TokenService(Options.Create(new JwtOptions
+        var tokenService = CreateDevelopmentTokenService(new JwtOptions
         {
             Issuer = issuer,
             Audience = "aud-a",
             ExpiresMinutes = 30,
-        }));
+        });
 
         var token = tokenService.Issue(Guid.NewGuid(), "bob", Guid.NewGuid().ToString("N")).Token;
 
-        var validator = new TokenService(Options.Create(new JwtOptions
+        var validator = CreateDevelopmentTokenService(new JwtOptions
         {
             Issuer = issuer,
             Audience = "aud-b",
             ExpiresMinutes = 30,
-        }));
+        });
 
         var result = validator.Validate(token);
         result.IsValid.Should().BeFalse();
+    }
+
+    private sealed class TestHostEnvironment : IHostEnvironment
+    {
+        public string EnvironmentName { get; set; } = Environments.Development;
+
+        public string ApplicationName { get; set; } = "AccountService.IntegrationTests";
+
+        public string ContentRootPath { get; set; } = AppContext.BaseDirectory;
+
+        public IFileProvider ContentRootFileProvider { get; set; } = new NullFileProvider();
     }
 }

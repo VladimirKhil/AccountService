@@ -1,7 +1,7 @@
 <Project>
   <PropertyGroup>
-    <Authors>Vladimir Khil</Authors
-    <Company>Khil-soft</Company>>
+    <Authors>Vladimir Khil</Authors>
+    <Company>Khil-soft</Company>
     <Copyright>Copyright © Khil-soft 2026</Copyright>
     <PackageProjectUrl>https://github.com/VladimirKhil/AccountService</PackageProjectUrl>
     <RepositoryUrl>https://github.com/VladimirKhil/AccountService</RepositoryUrl>

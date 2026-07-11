@@ -22,20 +22,11 @@ spec:
             - containerPort: {{ .Values.service.port }}
           env:
             - name: ConnectionStrings__AccountService
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.secrets.existingSecret | quote }}
-                  key: {{ .Values.secrets.dbConnectionStringKey | quote }}
+              value: {{ .Values.accountService.connectionString | quote }}
             - name: Admin__ClientSecret
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.secrets.existingSecret | quote }}
-                  key: {{ .Values.secrets.adminClientSecretKey | quote }}
+              value: {{ .Values.accountService.adminClientSecret | quote }}
             - name: Steam__ApiKey
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.secrets.existingSecret | quote }}
-                  key: {{ .Values.secrets.steamApiKeyKey | quote }}
+              value: {{ .Values.accountService.steamApiKey | quote }}
             - name: Steam__AppId
               value: {{ .Values.accountService.steamAppId | quote }}
             - name: Steam__Identity
@@ -45,12 +36,6 @@ spec:
             - name: Jwt__Audience
               value: {{ .Values.accountService.jwtAudience | quote }}
             - name: Jwt__PrivateKeyPem
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.secrets.existingSecret | quote }}
-                  key: {{ .Values.secrets.jwtPrivateKeyPemKey | quote }}
+              value: {{ .Values.accountService.jwtPrivateKeyPem | quote }}
             - name: Jwt__PublicKeyPem
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.secrets.existingSecret | quote }}
-                  key: {{ .Values.secrets.jwtPublicKeyPemKey | quote }}
+              value: {{ .Values.accountService.jwtPublicKeyPem | quote }}

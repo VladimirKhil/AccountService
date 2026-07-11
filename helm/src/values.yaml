@@ -19,18 +19,15 @@ ingress:
           pathType: Prefix
 
 accountService:
+  connectionString: "Host=postgres;Port=5432;Database=accountservice;Username=postgres;Password=postgres"
+  adminClientSecret: "change-me"
+  steamApiKey: "change-me"
   steamAppId: "0"
   steamIdentity: "account-service"
   jwtIssuer: "AccountService"
   jwtAudience: "AccountConsumers"
-
-secrets:
-  existingSecret: "accountservice-secrets"
-  dbConnectionStringKey: "connectionString"
-  adminClientSecretKey: "adminClientSecret"
-  steamApiKeyKey: "steamApiKey"
-  jwtPrivateKeyPemKey: "jwtPrivateKeyPem"
-  jwtPublicKeyPemKey: "jwtPublicKeyPem"
+  jwtPrivateKeyPem: ""
+  jwtPublicKeyPem: ""
 
 postgres:
   host: postgres

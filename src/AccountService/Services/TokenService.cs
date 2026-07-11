@@ -1,11 +1,11 @@
 using AccountService.Configuration;
 using AccountService.Contracts;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
-using System.Text;
 
 namespace AccountService.Services;
 
@@ -16,10 +16,10 @@ public sealed class TokenService : ITokenService
     private readonly RsaSecurityKey _publicKey;
     private readonly JwtSecurityTokenHandler _handler = new();
 
-    public TokenService(IOptions<JwtOptions> options)
+    public TokenService(IOptions<JwtOptions> options, IHostEnvironment hostEnvironment)
     {
         _options = options.Value;
-        var (privatePem, publicPem) = ResolveKeyPair(_options);
+        var (privatePem, publicPem) = ResolveKeyPair(_options, hostEnvironment.IsDevelopment());
 
         var privateRsa = RSA.Create();
         privateRsa.ImportFromPem(privatePem);
@@ -82,14 +82,23 @@ public sealed class TokenService : ITokenService
 
     public SecurityKey GetPublicSigningKey() => _publicKey;
 
-    private static (string privatePem, string publicPem) ResolveKeyPair(JwtOptions options)
+    private static (string privatePem, string publicPem) ResolveKeyPair(JwtOptions options, bool isDevelopment)
     {
-        if (!string.IsNullOrWhiteSpace(options.PrivateKeyPem) && !string.IsNullOrWhiteSpace(options.PublicKeyPem))
+        var hasPrivateKey = !string.IsNullOrWhiteSpace(options.PrivateKeyPem);
+        var hasPublicKey = !string.IsNullOrWhiteSpace(options.PublicKeyPem);
+
+        if (hasPrivateKey && hasPublicKey)
         {
-            return (options.PrivateKeyPem, options.PublicKeyPem);
+            return (options.PrivateKeyPem!, options.PublicKeyPem!);
+        }
+
+        if (isDevelopment && !hasPrivateKey && !hasPublicKey)
+        {
+            using var rsa = RSA.Create(2048);
+            return (rsa.ExportRSAPrivateKeyPem(), rsa.ExportRSAPublicKeyPem());
         }
 
         throw new InvalidOperationException(
-            "JWT key pair is not configured. Set Jwt:PrivateKeyPem and Jwt:PublicKeyPem.");
+            "JWT key pair is not configured correctly. Set both Jwt:PrivateKeyPem and Jwt:PublicKeyPem. Temporary development keys are generated only when both values are missing.");
     }
 }

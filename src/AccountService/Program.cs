@@ -25,6 +25,7 @@ ConfigureServices(builder.Services, builder.Configuration);
 var app = builder.Build();
 
 app.UseSerilogRequestLogging();
+app.UseCors("TauriCors");
 app.UseMiddleware<AdminAuthMiddleware>();
 app.UseAuthentication();
 app.UseAuthorization();
@@ -66,6 +67,18 @@ static void ConfigureServices(IServiceCollection services, IConfiguration config
 	services.AddSingleton<IConfigureOptions<JwtBearerOptions>, ConfigureJwtBearerOptions>();
 
 	services.AddAuthorization();
+
+    services.AddCors(options =>
+    {
+        options.AddPolicy("TauriCors", policy =>
+            policy
+                .WithOrigins(
+                    "http://tauri.localhost",
+                    "https://tauri.localhost")
+                .AllowAnyHeader()
+                .AllowAnyMethod()
+                .AllowCredentials());
+    });
 }
 
 static void ConfigureMigrationRunner(IServiceCollection services, IConfiguration configuration)
@@ -133,7 +146,7 @@ static async Task<IResult> LoginBySteamAsync(
 		{
 			HttpOnly = true,
 			Secure = true,
-			SameSite = SameSiteMode.Strict,
+			SameSite = SameSiteMode.None,
 			Expires = expires,
 			IsEssential = true,
 			Path = "/",
