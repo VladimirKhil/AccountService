@@ -1,4 +1,5 @@
 using AccountService.Configuration;
+using AccountService.Contract.Models;
 using AccountService.Contracts;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
@@ -11,6 +12,8 @@ namespace AccountService.Services;
 
 public sealed class TokenService : ITokenService
 {
+    public const string AuthProviderClaimType = "auth_provider";
+
     private readonly JwtOptions _options;
     private readonly RsaSecurityKey _privateKey;
     private readonly RsaSecurityKey _publicKey;
@@ -31,7 +34,7 @@ public sealed class TokenService : ITokenService
         _publicKey = new RsaSecurityKey(publicRsa);
     }
 
-    public TokenIssueResult Issue(Guid userId, string username, string jwtId)
+    public TokenIssueResult Issue(Guid userId, string username, AuthProvider authProvider, string jwtId)
     {
         var now = DateTimeOffset.UtcNow;
         var expires = now.AddMinutes(_options.ExpiresMinutes);
@@ -42,6 +45,7 @@ public sealed class TokenService : ITokenService
             [
                 new Claim(JwtRegisteredClaimNames.Sub, userId.ToString()),
                 new Claim(JwtRegisteredClaimNames.UniqueName, username),
+                new Claim(AuthProviderClaimType, authProvider.ToString()),
                 new Claim(JwtRegisteredClaimNames.Jti, jwtId),
             ]),
             Expires = expires.UtcDateTime,

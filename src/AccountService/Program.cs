@@ -1,4 +1,5 @@
 using AccountService.Configuration;
+using AccountService.Contract.Models;
 using AccountService.Contract.Requests;
 using AccountService.Contract.Responses;
 using AccountService.Contracts;
@@ -137,7 +138,7 @@ static async Task<IResult> LoginBySteamAsync(
 			return Results.Problem("Authorized user account was not found", statusCode: 500);
 		}
 
-		var token = await accountManager.CreateSessionTokenAsync(profile.UserId, profile.Username, cancellationToken);
+		var token = await accountManager.CreateSessionTokenAsync(profile.UserId, profile.Username, AuthProvider.Steam, cancellationToken);
 
 		var options = jwtOptions.Value;
 		var expires = DateTimeOffset.UtcNow.AddMinutes(options.ExpiresMinutes);

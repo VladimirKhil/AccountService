@@ -1,4 +1,5 @@
 using AccountService.Configuration;
+using AccountService.Contract.Models;
 using AccountService.Services;
 using FluentAssertions;
 using Microsoft.Extensions.FileProviders;
@@ -26,13 +27,14 @@ public sealed class TokenServiceTests
         var userId = Guid.NewGuid();
         var jwtId = Guid.NewGuid().ToString("N");
 
-        var issued = service.Issue(userId, "alice", jwtId);
+        var issued = service.Issue(userId, "alice", AuthProvider.Steam, jwtId);
         var result = service.Validate(issued.Token);
 
         result.IsValid.Should().BeTrue();
         result.Principal.Should().NotBeNull();
         result.JwtId.Should().Be(jwtId);
         result.Principal!.Identity!.Name.Should().Be("alice");
+        result.Principal.FindFirst(TokenService.AuthProviderClaimType)?.Value.Should().Be(AuthProvider.Steam.ToString());
     }
 
     [Fact]
@@ -47,7 +49,7 @@ public sealed class TokenServiceTests
             ExpiresMinutes = 30,
         });
 
-        var token = tokenService.Issue(Guid.NewGuid(), "bob", Guid.NewGuid().ToString("N")).Token;
+        var token = tokenService.Issue(Guid.NewGuid(), "bob", AuthProvider.Steam, Guid.NewGuid().ToString("N")).Token;
 
         var validator = CreateDevelopmentTokenService(new JwtOptions
         {

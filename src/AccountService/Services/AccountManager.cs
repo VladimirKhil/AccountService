@@ -201,10 +201,10 @@ public sealed class AccountManager(
         return ids.Count;
     }
 
-    public async Task<string> CreateSessionTokenAsync(Guid userId, string username, CancellationToken cancellationToken)
+    public async Task<string> CreateSessionTokenAsync(Guid userId, string username, AuthProvider authProvider, CancellationToken cancellationToken)
     {
         var jwtId = Guid.NewGuid().ToString("N");
-        var issue = tokenService.Issue(userId, username, jwtId);
+        var issue = tokenService.Issue(userId, username, authProvider, jwtId);
 
         await db.InsertAsync(new AccountSessionRecord
         {
