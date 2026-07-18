@@ -1,0 +1,13 @@
+apiVersion: v1
+entries:
+  accountservice:
+  - apiVersion: v2
+    appVersion: 1.0.0
+    created: "2026-07-18T20:15:39.7527581+02:00"
+    description: AccountService Helm chart
+    digest: 82784a261b2b7f4331007472d767abf92cc1c75c46e4d07d3819f9b54720e4e8
+    name: accountservice
+    urls:
+    - accountservice-1.0.0.tgz
+    version: 1.0.0
+generated: "2026-07-18T20:15:39.7484435+02:00"
