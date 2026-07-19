@@ -3,39 +3,56 @@ kind: Deployment
 metadata:
   name: {{ include "accountservice.fullname" . }}
   labels:
-    app.kubernetes.io/name: {{ include "accountservice.name" . }}
+    {{- include "accountservice.labels" . | nindent 4 }}
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      app.kubernetes.io/name: {{ include "accountservice.name" . }}
+      {{- include "accountservice.selectorLabels" . | nindent 6 }}
   template:
     metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       labels:
-        app.kubernetes.io/name: {{ include "accountservice.name" . }}
+        {{- include "accountservice.selectorLabels" . | nindent 8 }}
     spec:
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
       containers:
-        - name: accountservice
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
-            - containerPort: {{ .Values.service.port }}
+            - name: http
+              containerPort: {{ .Values.service.targetPort }}
+              protocol: TCP
           env:
+            - name: DBPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: '{{ .Values.database.passwordKey }}'
+                  key: '{{ .Values.database.passwordValue }}'
             - name: ConnectionStrings__AccountService
-              value: {{ .Values.accountService.connectionString | quote }}
+              value: 'Host={{ .Values.database.host }};Port={{ .Values.database.port }};Username={{ .Values.database.username }};Password=$(DBPASSWORD);Database={{ .Values.database.name }}'
             - name: Admin__ClientSecret
-              value: {{ .Values.accountService.adminClientSecret | quote }}
+              value: {{ .Values.options.adminClientSecret | quote }}
             - name: Steam__ApiKey
-              value: {{ .Values.accountService.steamApiKey | quote }}
+              value: {{ .Values.options.steamApiKey | quote }}
             - name: Steam__AppId
-              value: {{ .Values.accountService.steamAppId | quote }}
+              value: {{ .Values.options.steamAppId | quote }}
             - name: Steam__Identity
-              value: {{ .Values.accountService.steamIdentity | quote }}
+              value: {{ .Values.options.steamIdentity | quote }}
             - name: Jwt__Issuer
-              value: {{ .Values.accountService.jwtIssuer | quote }}
+              value: {{ .Values.options.jwtIssuer | quote }}
             - name: Jwt__Audience
-              value: {{ .Values.accountService.jwtAudience | quote }}
+              value: {{ .Values.options.jwtAudience | quote }}
             - name: Jwt__PrivateKeyPem
-              value: {{ .Values.accountService.jwtPrivateKeyPem | quote }}
+              value: {{ .Values.options.jwtPrivateKeyPem | quote }}
             - name: Jwt__PublicKeyPem
-              value: {{ .Values.accountService.jwtPublicKeyPem | quote }}
+              value: {{ .Values.options.jwtPublicKeyPem | quote }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}

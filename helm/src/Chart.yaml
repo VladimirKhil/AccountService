@@ -1,5 +1,6 @@
 apiVersion: v2
-name: accountservice
-description: AccountService Helm chart
-version: 1.0.0
-appVersion: "1.0.0"
+name: account
+description: Service for managing user accounts and authentication
+type: application
+version: 1.0.1
+appVersion: 1.0.1

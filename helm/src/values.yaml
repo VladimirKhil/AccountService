@@ -5,21 +5,45 @@ image:
   tag: latest
   pullPolicy: IfNotPresent
 
+nameOverride: ""
+fullnameOverride: ""
+
+podAnnotations: {}
+
+podSecurityContext: {}
+securityContext: {}
+
 service:
   type: ClusterIP
   port: 8080
+  targetPort: 8080
+  labels: {}
 
 ingress:
   enabled: false
-  className: ""
-  hosts:
-    - host: accountservice.local
-      paths:
-        - path: /
-          pathType: Prefix
+  className: nginx
+  clientSecret: ''
+  annotations: {}
+  hosts: []
+  tls: []
 
-accountService:
-  connectionString: "Host=postgres;Port=5432;Database=accountservice;Username=postgres;Password=postgres"
+resources: {}
+
+database:
+  host: postgres
+  port: 5432
+  name: account
+  username: postgres
+  passwordKey: ''
+  passwordValue: 'postgres-password'
+  backup:
+    enabled: false
+    schedule: '0 0 * * *' # Run every day at midnight
+    imageVersion: 15
+    securityContext: {}
+    volumePath: ''
+
+options:
   adminClientSecret: "change-me"
   steamApiKey: "change-me"
   steamAppId: "0"
@@ -28,10 +52,3 @@ accountService:
   jwtAudience: "AccountConsumers"
   jwtPrivateKeyPem: ""
   jwtPublicKeyPem: ""
-
-postgres:
-  host: postgres
-  port: 5432
-  database: accountservice
-  username: postgres
-  password: postgres
