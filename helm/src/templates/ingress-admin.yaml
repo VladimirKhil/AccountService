@@ -29,11 +29,10 @@ spec:
   {{- end }}
   rules:
     {{- range .Values.ingress.hosts }}
-    - host: {{ .host | quote }}
-      http:
+    - http:
         paths:
           {{- range .paths }}
-          - path: {{ .path }}/api/v1/admin/(.+)
+          - path: {{ . }}/api/v1/admin/(.+)
             pathType: ImplementationSpecific
             backend:
               service:
