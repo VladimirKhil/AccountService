@@ -7,6 +7,7 @@ using AccountService.Database;
 using AccountService.Middlewares;
 using AccountService.Services;
 using FluentMigrator.Runner;
+using FluentMigrator.Runner.Conventions;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Options;
 using Serilog;
@@ -84,7 +85,9 @@ static void ConfigureServices(IServiceCollection services, IConfiguration config
 
 static void ConfigureMigrationRunner(IServiceCollection services, IConfiguration configuration)
 {
-	var dbConnectionString = configuration.GetConnectionString("AccountService");
+    services.AddSingleton<IConventionSet>(new DefaultConventionSet(DbConstants.Schema, null));
+
+    var dbConnectionString = configuration.GetConnectionString("AccountService");
 
 	services
 		.AddFluentMigratorCore()

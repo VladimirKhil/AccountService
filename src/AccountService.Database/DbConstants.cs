@@ -2,7 +2,7 @@ namespace AccountService.Database;
 
 public static class DbConstants
 {
-    public const string Schema = "public";
+    public const string Schema = "accounts";
 
     public const string Accounts = "accounts";
 
