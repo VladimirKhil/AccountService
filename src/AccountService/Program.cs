@@ -110,7 +110,7 @@ static void CreateDatabase(WebApplication app)
 
 	connectionStringBuilder["Database"] = "postgres";
 
-	DatabaseExtensions.EnsureExists(connectionStringBuilder.ConnectionString!, DbConstants.Schema);
+	DatabaseExtensions.EnsureExists(connectionStringBuilder.ConnectionString!, DbConstants.DbName);
 }
 
 static void ApplyMigrations(WebApplication app)
