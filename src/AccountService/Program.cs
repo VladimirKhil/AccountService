@@ -70,17 +70,17 @@ static void ConfigureServices(IServiceCollection services, IConfiguration config
 
 	services.AddAuthorization();
 
-    services.AddCors(options =>
-    {
-        options.AddPolicy("TauriCors", policy =>
-            policy
-                .WithOrigins(
-                    "http://tauri.localhost",
-                    "https://tauri.localhost")
-                .AllowAnyHeader()
-                .AllowAnyMethod()
-                .AllowCredentials());
-    });
+    // services.AddCors(options =>
+    // {
+    //     options.AddPolicy("TauriCors", policy =>
+    //         policy
+    //             .WithOrigins(
+    //                 "http://tauri.localhost",
+    //                 "https://tauri.localhost")
+    //             .AllowAnyHeader()
+    //             .AllowAnyMethod()
+    //             .AllowCredentials());
+    // });
 }
 
 static void ConfigureMigrationRunner(IServiceCollection services, IConfiguration configuration)
@@ -126,6 +126,7 @@ static void ApplyMigrations(WebApplication app)
 
 static async Task<IResult> LoginBySteamAsync(
 	SteamLoginRequest request,
+	bool includeToken,
 	HttpContext context,
 	IAccountManager accountManager,
 	IOptions<JwtOptions> jwtOptions,
@@ -155,6 +156,11 @@ static async Task<IResult> LoginBySteamAsync(
 			IsEssential = true,
 			Path = "/",
 		});
+
+		if (includeToken)
+		{
+			auth.Token = token;
+		}
 
 		return Results.Ok(auth);
 	}
