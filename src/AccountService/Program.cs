@@ -27,7 +27,7 @@ ConfigureServices(builder.Services, builder.Configuration);
 var app = builder.Build();
 
 app.UseSerilogRequestLogging();
-app.UseCors("TauriCors");
+//app.UseCors("TauriCors");
 app.UseMiddleware<AdminAuthMiddleware>();
 app.UseAuthentication();
 app.UseAuthorization();
