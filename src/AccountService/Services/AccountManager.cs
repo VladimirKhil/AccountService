@@ -21,16 +21,18 @@ public sealed class AccountManager(
     {
         var auth = await steamAuthorizationService.AuthorizeAsync(authTicket, cancellationToken);
 
-        if (!auth.IsSuccess || string.IsNullOrWhiteSpace(auth.SteamId))
+        if (!auth.IsSuccess || string.IsNullOrWhiteSpace(auth.SteamId) || string.IsNullOrWhiteSpace(auth.SteamName))
         {
             throw new InvalidOperationException(auth.Error ?? "Steam authorization failed");
         }
 
+        var steamId = auth.SteamId;
+        var displayName = auth.SteamName.Trim();
         var now = DateTimeOffset.UtcNow;
         var provider = AuthProvider.Steam;
 
         var link = await db.ExternalAuthLinks
-            .FirstOrDefaultAsync(x => x.Provider == provider && x.ProviderUserId == auth.SteamId, token: cancellationToken);
+            .FirstOrDefaultAsync(x => x.Provider == provider && x.ProviderUserId == steamId, token: cancellationToken);
 
         AccountRecord account;
 
@@ -39,7 +41,8 @@ public sealed class AccountManager(
             account = new AccountRecord
             {
                 Id = Guid.NewGuid(),
-                Username = BuildDefaultUsername(auth.SteamName, auth.SteamId),
+                Username = BuildDefaultUsername(steamId),
+                DisplayName = displayName,
                 Avatar = auth.Avatar,
                 Gender = Gender.Unspecified,
                 CreatedAt = now,
@@ -53,7 +56,7 @@ public sealed class AccountManager(
                 Id = Guid.NewGuid(),
                 AccountId = account.Id,
                 Provider = provider,
-                ProviderUserId = auth.SteamId,
+                ProviderUserId = steamId,
                 CreatedAt = now,
             };
 
@@ -69,10 +72,12 @@ public sealed class AccountManager(
                 account.PurgeAfter = null;
             }
 
-            if (string.IsNullOrWhiteSpace(account.Username) && !string.IsNullOrWhiteSpace(auth.SteamName))
+            if (string.IsNullOrWhiteSpace(account.Username))
             {
-                account.Username = auth.SteamName.Trim();
+                account.Username = BuildDefaultUsername(steamId);
             }
+
+            account.DisplayName = displayName;
 
             if (account.Avatar == null && auth.Avatar?.Length > 0)
             {
@@ -201,10 +206,10 @@ public sealed class AccountManager(
         return ids.Count;
     }
 
-    public async Task<string> CreateSessionTokenAsync(Guid userId, string username, AuthProvider authProvider, CancellationToken cancellationToken)
+    public async Task<string> CreateSessionTokenAsync(Guid userId, string username, string displayName, AuthProvider authProvider, CancellationToken cancellationToken)
     {
         var jwtId = Guid.NewGuid().ToString("N");
-        var issue = tokenService.Issue(userId, username, authProvider, jwtId);
+        var issue = tokenService.Issue(userId, username, displayName, authProvider, jwtId);
 
         await db.InsertAsync(new AccountSessionRecord
         {
@@ -218,21 +223,13 @@ public sealed class AccountManager(
         return issue.Token;
     }
 
-    private static string BuildDefaultUsername(string? steamName, string steamId)
-    {
-        if (!string.IsNullOrWhiteSpace(steamName))
-        {
-            return steamName.Trim();
-        }
-
-        var suffix = steamId.Length > 6 ? steamId[^6..] : steamId;
-        return $"steam_{suffix}";
-    }
+    private static string BuildDefaultUsername(string steamId) => $"steam_{steamId}";
 
     private static UserProfileResponse Map(AccountRecord account) => new()
     {
         UserId = account.Id,
         Username = account.Username,
+        DisplayName = account.DisplayName,
         Avatar = account.Avatar,
         Gender = account.Gender,
     };

@@ -4,6 +4,11 @@
 		"dotnet test": true,
 		"ConvertFrom-Json": true,
 		"Out-Null": true,
-		"helm": true
+		"helm": true,
+		"/^dotnet --version$/": {
+			"approve": true,
+			"matchCommandLine": true
+		},
+		"npm run build:types": true
 	}
 }

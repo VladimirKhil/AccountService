@@ -7,7 +7,7 @@ namespace AccountService.Contracts;
 
 public interface ITokenService
 {
-    TokenIssueResult Issue(Guid userId, string username, AuthProvider authProvider, string jwtId);
+    TokenIssueResult Issue(Guid userId, string username, string displayName, AuthProvider authProvider, string jwtId);
 
     CustomTokenValidationResult Validate(string token);
 

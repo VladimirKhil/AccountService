@@ -17,6 +17,7 @@ export interface AuthResponse {
 export interface UserProfileResponse {
   userId: string;
   username: string;
+  displayName?: string;
   avatar?: number[];
   gender: number;
 }
