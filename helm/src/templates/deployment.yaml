@@ -54,5 +54,9 @@ spec:
               value: {{ .Values.options.jwtPrivateKeyPem | quote }}
             - name: Jwt__PublicKeyPem
               value: {{ .Values.options.jwtPublicKeyPem | quote }}
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: {{ .Values.options.otel.uri | quote }}
+            - name: OTEL_METRIC_EXPORT_INTERVAL
+              value: {{ .Values.options.otel.metric.exportInterval | quote }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}

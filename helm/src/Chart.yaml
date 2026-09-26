@@ -2,5 +2,5 @@ apiVersion: v2
 name: account
 description: Service for managing user accounts and authentication
 type: application
-version: 1.0.3
+version: 1.0.4
 appVersion: 1.0.3

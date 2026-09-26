@@ -6,10 +6,13 @@ using AccountService.Contracts;
 using AccountService.Database;
 using AccountService.Middlewares;
 using AccountService.Services;
+using AspNetCoreRateLimit;
 using FluentMigrator.Runner;
 using FluentMigrator.Runner.Conventions;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Options;
+using OpenTelemetry.Metrics;
+using OpenTelemetry.Resources;
 using Serilog;
 using System.Data.Common;
 using System.IdentityModel.Tokens.Jwt;
@@ -20,6 +23,10 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Host.UseSerilog((ctx, lc) => lc
 	.WriteTo.Console(new Serilog.Formatting.Display.MessageTemplateTextFormatter(
 		"[{Timestamp:yyyy/MM/dd HH:mm:ss} {Level}] {Message:lj} {Exception}{NewLine}"))
+	.WriteTo.OpenTelemetry(options => options.ResourceAttributes = new Dictionary<string, object>
+	{
+		["service.name"] = "AccountService"
+	})
 	.ReadFrom.Configuration(ctx.Configuration));
 
 ConfigureServices(builder.Services, builder.Configuration);
@@ -28,6 +35,7 @@ var app = builder.Build();
 
 app.UseSerilogRequestLogging();
 //app.UseCors("TauriCors");
+app.UseIpRateLimiting();
 app.UseMiddleware<AdminAuthMiddleware>();
 app.UseAuthentication();
 app.UseAuthorization();
@@ -48,6 +56,8 @@ static void ConfigureServices(IServiceCollection services, IConfiguration config
 	services.Configure<SteamOptions>(configuration.GetSection(SteamOptions.ConfigurationSectionName));
 	services.Configure<JwtOptions>(configuration.GetSection(JwtOptions.ConfigurationSectionName));
 	services.Configure<AdminOptions>(configuration.GetSection(AdminOptions.ConfigurationSectionName));
+	AddRateLimits(services, configuration);
+	AddMetrics(services);
 
 	services.AddAccountDatabase(configuration);
 	ConfigureMigrationRunner(services, configuration);
@@ -81,6 +91,25 @@ static void ConfigureServices(IServiceCollection services, IConfiguration config
     //             .AllowAnyMethod()
     //             .AllowCredentials());
     // });
+}
+
+static void AddRateLimits(IServiceCollection services, IConfiguration configuration)
+{
+	services.Configure<IpRateLimitOptions>(configuration.GetSection("IpRateLimit"));
+	services.AddMemoryCache();
+	services.AddSingleton<IRateLimitConfiguration, RateLimitConfiguration>();
+	services.AddInMemoryRateLimiting();
+}
+
+static void AddMetrics(IServiceCollection services)
+{
+	services.AddOpenTelemetry().WithMetrics(metrics =>
+		metrics
+			.ConfigureResource(resource => resource.AddService("AccountService"))
+			.AddAspNetCoreInstrumentation()
+			.AddRuntimeInstrumentation()
+			.AddProcessInstrumentation()
+			.AddOtlpExporter());
 }
 
 static void ConfigureMigrationRunner(IServiceCollection services, IConfiguration configuration)
