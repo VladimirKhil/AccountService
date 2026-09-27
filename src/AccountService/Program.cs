@@ -176,7 +176,7 @@ static async Task<IResult> LoginBySteamAsync(
 			return Results.Problem("Authorized user profile name was not found", statusCode: 500);
 		}
 
-		var token = await accountManager.CreateSessionTokenAsync(profile.UserId, profile.Username, AuthProvider.Steam, cancellationToken);
+		var token = await accountManager.CreateSessionTokenAsync(profile.UserId, auth.ExternalId, profile.Username, AuthProvider.Steam, cancellationToken);
 
 		var options = jwtOptions.Value;
 		var expires = DateTimeOffset.UtcNow.AddMinutes(options.ExpiresMinutes);

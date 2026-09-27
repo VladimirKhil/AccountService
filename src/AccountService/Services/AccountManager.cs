@@ -81,6 +81,7 @@ public sealed class AccountManager(
         return new AuthResponse
         {
             UserId = account.Id,
+            ExternalId = steamId,
             Username = UsernameFormatter.FormatPublic(account.Username),
         };
     }
@@ -217,10 +218,10 @@ public sealed class AccountManager(
         return deleted;
     }
 
-    public async Task<string> CreateSessionTokenAsync(Guid userId, string username, AuthProvider authProvider, CancellationToken cancellationToken)
+    public async Task<string> CreateSessionTokenAsync(Guid userId, string externalId, string username, AuthProvider authProvider, CancellationToken cancellationToken)
     {
         var jwtId = Guid.NewGuid().ToString("N");
-        var issue = tokenService.Issue(userId, username, authProvider, jwtId);
+        var issue = tokenService.Issue(userId, externalId, username, authProvider, jwtId);
 
         await db.InsertAsync(new AccountSessionRecord
         {

@@ -33,7 +33,7 @@ public sealed class TokenService : ITokenService
         _publicKey = new RsaSecurityKey(publicRsa);
     }
 
-    public TokenIssueResult Issue(Guid userId, string username, AuthProvider authProvider, string jwtId)
+    public TokenIssueResult Issue(Guid userId, string externalId, string username, AuthProvider authProvider, string jwtId)
     {
         var now = DateTimeOffset.UtcNow;
         var expires = now.AddMinutes(_options.ExpiresMinutes);
@@ -43,6 +43,7 @@ public sealed class TokenService : ITokenService
             Subject = new ClaimsIdentity(
             [
                 new Claim(JwtRegisteredClaimNames.Sub, userId.ToString()),
+                new Claim(JwtRegisteredClaimNames.NameId, externalId),
                 new Claim(JwtRegisteredClaimNames.UniqueName, UsernameFormatter.FormatPublic(username)),
                 new Claim(AuthProviderClaimType, authProvider.ToString()),
                 new Claim(JwtRegisteredClaimNames.Jti, jwtId),
