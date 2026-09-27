@@ -14,8 +14,14 @@ public sealed class PurgeDeletedAccountsHostedService(
             {
                 using var scope = scopeFactory.CreateScope();
                 var accountManager = scope.ServiceProvider.GetRequiredService<IAccountManager>();
-                var purged = await accountManager.PurgeDeletedAccountsAsync(stoppingToken);
 
+                var expiredSessions = await accountManager.PurgeExpiredSessionsAsync(stoppingToken);
+                if (expiredSessions > 0)
+                {
+                    logger.LogInformation("Purged {Count} expired sessions", expiredSessions);
+                }
+
+                var purged = await accountManager.PurgeDeletedAccountsAsync(stoppingToken);
                 if (purged > 0)
                 {
                     logger.LogInformation("Purged {Count} accounts", purged);
@@ -23,7 +29,7 @@ public sealed class PurgeDeletedAccountsHostedService(
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Failed to purge deleted accounts");
+                logger.LogError(ex, "Failed to purge deleted accounts or expired sessions");
             }
 
             await Task.Delay(TimeSpan.FromHours(1), stoppingToken);

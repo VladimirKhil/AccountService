@@ -206,6 +206,21 @@ public sealed class AccountManager(
         return ids.Count;
     }
 
+    public async Task<int> PurgeExpiredSessionsAsync(CancellationToken cancellationToken)
+    {
+        var now = DateTimeOffset.UtcNow;
+        var deleted = await db.AccountSessions
+            .Where(s => s.ExpiresAt <= now)
+            .DeleteAsync(cancellationToken);
+
+        if (deleted > 0)
+        {
+            logger.LogInformation("Purged {Count} expired sessions", deleted);
+        }
+
+        return deleted;
+    }
+
     public async Task<string> CreateSessionTokenAsync(Guid userId, string username, string displayName, AuthProvider authProvider, CancellationToken cancellationToken)
     {
         var jwtId = Guid.NewGuid().ToString("N");

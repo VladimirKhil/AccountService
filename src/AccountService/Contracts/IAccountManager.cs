@@ -19,4 +19,6 @@ public interface IAccountManager
     Task<ValidateSessionResponse> ValidateSessionAsync(string token, CancellationToken cancellationToken);
 
     Task<int> PurgeDeletedAccountsAsync(CancellationToken cancellationToken);
+
+    Task<int> PurgeExpiredSessionsAsync(CancellationToken cancellationToken);
 }
