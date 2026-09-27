@@ -5,6 +5,7 @@ using AccountService.Contracts;
 using AccountService.Database;
 using AccountService.Database.Models;
 using LinqToDB;
+using Npgsql;
 using System.IdentityModel.Tokens.Jwt;
 
 namespace AccountService.Services;
@@ -27,7 +28,7 @@ public sealed class AccountManager(
         }
 
         var steamId = auth.SteamId;
-        var displayName = auth.SteamName.Trim();
+        var steamName = auth.SteamName.Trim();
         var now = DateTimeOffset.UtcNow;
         var provider = AuthProvider.Steam;
 
@@ -38,18 +39,7 @@ public sealed class AccountManager(
 
         if (link == null)
         {
-            account = new AccountRecord
-            {
-                Id = Guid.NewGuid(),
-                Username = BuildDefaultUsername(steamId),
-                DisplayName = displayName,
-                Avatar = auth.Avatar,
-                Gender = Gender.Unspecified,
-                CreatedAt = now,
-                UpdatedAt = now,
-            };
-
-            await db.InsertAsync(account, token: cancellationToken);
+            account = await CreateAccountWithUniqueUsernameAsync(steamName, auth.Avatar, now, cancellationToken);
 
             link = new ExternalAuthLinkRecord
             {
@@ -72,12 +62,12 @@ public sealed class AccountManager(
                 account.PurgeAfter = null;
             }
 
+            string? usernameBaseForRetry = null;
             if (string.IsNullOrWhiteSpace(account.Username))
             {
-                account.Username = BuildDefaultUsername(steamId);
+                usernameBaseForRetry = NormalizeUsernameBase(steamName);
+                account.Username = BuildUsernameCandidate(usernameBaseForRetry, 0);
             }
-
-            account.DisplayName = displayName;
 
             if (account.Avatar == null && auth.Avatar?.Length > 0)
             {
@@ -85,10 +75,14 @@ public sealed class AccountManager(
             }
 
             account.UpdatedAt = now;
-            await db.UpdateAsync(account, token: cancellationToken);
+            await UpdateAccountWithUsernameRetryAsync(account, usernameBaseForRetry, cancellationToken);
         }
 
-        return new AuthResponse { UserId = account.Id };
+        return new AuthResponse
+        {
+            UserId = account.Id,
+            Username = UsernameFormatter.FormatPublic(account.Username),
+        };
     }
 
     public async Task<UserProfileResponse?> GetByUserIdAsync(Guid userId, CancellationToken cancellationToken)
@@ -103,9 +97,11 @@ public sealed class AccountManager(
         var account = await db.Accounts.FirstOrDefaultAsync(a => a.Id == userId && a.DeletedAt == null, token: cancellationToken)
             ?? throw new InvalidOperationException("Account is not found");
 
+        var usernameBaseForRetry = default(string);
         if (request.Username != null)
         {
-            account.Username = request.Username.Trim();
+            usernameBaseForRetry = NormalizeUsernameBase(request.Username);
+            account.Username = BuildUsernameCandidate(usernameBaseForRetry, 0);
         }
 
         if (request.Avatar != null)
@@ -120,7 +116,7 @@ public sealed class AccountManager(
 
         account.UpdatedAt = DateTimeOffset.UtcNow;
 
-        await db.UpdateAsync(account, token: cancellationToken);
+        await UpdateAccountWithUsernameRetryAsync(account, usernameBaseForRetry, cancellationToken);
 
         return Map(account);
     }
@@ -180,7 +176,7 @@ public sealed class AccountManager(
         {
             IsValid = true,
             UserId = account.Id,
-            Username = account.Username,
+            Username = UsernameFormatter.FormatPublic(account.Username),
         };
     }
 
@@ -221,10 +217,10 @@ public sealed class AccountManager(
         return deleted;
     }
 
-    public async Task<string> CreateSessionTokenAsync(Guid userId, string username, string displayName, AuthProvider authProvider, CancellationToken cancellationToken)
+    public async Task<string> CreateSessionTokenAsync(Guid userId, string username, AuthProvider authProvider, CancellationToken cancellationToken)
     {
         var jwtId = Guid.NewGuid().ToString("N");
-        var issue = tokenService.Issue(userId, username, displayName, authProvider, jwtId);
+        var issue = tokenService.Issue(userId, username, authProvider, jwtId);
 
         await db.InsertAsync(new AccountSessionRecord
         {
@@ -238,13 +234,75 @@ public sealed class AccountManager(
         return issue.Token;
     }
 
-    private static string BuildDefaultUsername(string steamId) => $"steam_{steamId}";
+    private async Task<AccountRecord> CreateAccountWithUniqueUsernameAsync(string requestedUsername, byte[]? avatar, DateTimeOffset now, CancellationToken cancellationToken)
+    {
+        var usernameBase = NormalizeUsernameBase(requestedUsername);
+        var attempt = 0;
+
+        while (true)
+        {
+            var account = new AccountRecord
+            {
+                Id = Guid.NewGuid(),
+                Username = BuildUsernameCandidate(usernameBase, attempt),
+                Avatar = avatar,
+                Gender = Gender.Unspecified,
+                CreatedAt = now,
+                UpdatedAt = now,
+            };
+
+            try
+            {
+                await db.InsertAsync(account, token: cancellationToken);
+                return account;
+            }
+            catch (Exception ex) when (IsUniqueConstraintViolation(ex))
+            {
+                attempt++;
+            }
+        }
+    }
+
+    private async Task UpdateAccountWithUsernameRetryAsync(AccountRecord account, string? usernameBase, CancellationToken cancellationToken)
+    {
+        var attempt = 0;
+
+        while (true)
+        {
+            if (usernameBase != null)
+            {
+                account.Username = BuildUsernameCandidate(usernameBase, attempt);
+            }
+
+            try
+            {
+                await db.UpdateAsync(account, token: cancellationToken);
+                return;
+            }
+            catch (Exception ex) when (usernameBase != null && IsUniqueConstraintViolation(ex))
+            {
+                attempt++;
+            }
+        }
+    }
+
+    private static string NormalizeUsernameBase(string requestedUsername)
+    {
+        var usernameBase = UsernameFormatter.NormalizeForStorage(requestedUsername);
+        return string.IsNullOrWhiteSpace(usernameBase) ? "user" : usernameBase;
+    }
+
+    private static string BuildUsernameCandidate(string usernameBase, int attempt)
+        => attempt == 0 ? usernameBase : $"{usernameBase}_{attempt + 1}";
+
+    private static bool IsUniqueConstraintViolation(Exception ex)
+        => ex is PostgresException { SqlState: PostgresErrorCodes.UniqueViolation }
+           || (ex.InnerException != null && IsUniqueConstraintViolation(ex.InnerException));
 
     private static UserProfileResponse Map(AccountRecord account) => new()
     {
         UserId = account.Id,
-        Username = account.Username,
-        DisplayName = account.DisplayName,
+        Username = UsernameFormatter.FormatPublic(account.Username),
         Avatar = account.Avatar,
         Gender = account.Gender,
     };

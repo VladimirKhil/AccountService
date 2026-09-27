@@ -5,6 +5,7 @@ using FluentAssertions;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
+using System.IdentityModel.Tokens.Jwt;
 
 namespace AccountService.IntegrationTests;
 
@@ -27,16 +28,15 @@ public sealed class TokenServiceTests
         var userId = Guid.NewGuid();
         var jwtId = Guid.NewGuid().ToString("N");
 
-        const string displayName = "Alice #2";
-        var issued = service.Issue(userId, "alice-account-name", displayName, AuthProvider.Steam, jwtId);
+        var issued = service.Issue(userId, "alice-account-name", AuthProvider.Steam, jwtId);
         var result = service.Validate(issued.Token);
 
         result.IsValid.Should().BeTrue();
         result.Principal.Should().NotBeNull();
         result.JwtId.Should().Be(jwtId);
-        result.Principal!.Identity!.Name.Should().Be("alice-account-name");
+        result.Principal!.Identity!.Name.Should().Be("Ⓢalice-account-name");
         result.Principal.FindFirst(TokenService.AuthProviderClaimType)?.Value.Should().Be(AuthProvider.Steam.ToString());
-        result.Principal.FindFirst("display_name")?.Value.Should().Be(displayName);
+        result.Principal.FindFirst(JwtRegisteredClaimNames.Nickname)?.Value.Should().BeNull();
     }
 
     [Fact]
@@ -51,7 +51,7 @@ public sealed class TokenServiceTests
             ExpiresMinutes = 30,
         });
 
-        var token = tokenService.Issue(Guid.NewGuid(), "bob", "Steam name", AuthProvider.Steam, Guid.NewGuid().ToString("N")).Token;
+        var token = tokenService.Issue(Guid.NewGuid(), "bob", AuthProvider.Steam, Guid.NewGuid().ToString("N")).Token;
 
         var validator = CreateDevelopmentTokenService(new JwtOptions
         {

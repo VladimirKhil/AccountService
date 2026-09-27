@@ -54,6 +54,11 @@ public sealed class Initial : Migration
         Create.Index("ix_accounts_purge_after")
             .OnTable(DbConstants.Accounts)
             .OnColumn("purge_after").Ascending();
+
+        Create.Index("ix_accounts_username")
+            .OnTable(DbConstants.Accounts)
+            .OnColumn("username").Ascending()
+            .WithOptions().Unique();
     }
 
     public override void Down()

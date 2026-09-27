@@ -10,6 +10,7 @@ export interface UpdateProfileRequest {
 
 export interface AuthResponse {
   userId: string;
+  username: string;
   /** Present only when login was called with includeToken: true. Use to send Authorization: Bearer for non-browser clients. */
   token?: string;
 }
@@ -17,7 +18,6 @@ export interface AuthResponse {
 export interface UserProfileResponse {
   userId: string;
   username: string;
-  displayName?: string;
   avatar?: number[];
   gender: number;
 }

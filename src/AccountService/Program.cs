@@ -171,12 +171,12 @@ static async Task<IResult> LoginBySteamAsync(
 			return Results.Problem("Authorized user account was not found", statusCode: 500);
 		}
 
-		if (string.IsNullOrWhiteSpace(profile.DisplayName))
+		if (string.IsNullOrWhiteSpace(profile.Username))
 		{
-			return Results.Problem("Authorized user Steam profile was not found", statusCode: 500);
+			return Results.Problem("Authorized user profile name was not found", statusCode: 500);
 		}
 
-		var token = await accountManager.CreateSessionTokenAsync(profile.UserId, profile.Username, profile.DisplayName, AuthProvider.Steam, cancellationToken);
+		var token = await accountManager.CreateSessionTokenAsync(profile.UserId, profile.Username, AuthProvider.Steam, cancellationToken);
 
 		var options = jwtOptions.Value;
 		var expires = DateTimeOffset.UtcNow.AddMinutes(options.ExpiresMinutes);

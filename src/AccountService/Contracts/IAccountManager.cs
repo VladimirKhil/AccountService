@@ -8,7 +8,7 @@ public interface IAccountManager
 {
     Task<AuthResponse> LoginBySteamAsync(string authTicket, CancellationToken cancellationToken);
 
-    Task<string> CreateSessionTokenAsync(Guid userId, string username, string displayName, AuthProvider authProvider, CancellationToken cancellationToken);
+    Task<string> CreateSessionTokenAsync(Guid userId, string username, AuthProvider authProvider, CancellationToken cancellationToken);
 
     Task<UserProfileResponse?> GetByUserIdAsync(Guid userId, CancellationToken cancellationToken);
 

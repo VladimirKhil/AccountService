@@ -15,10 +15,6 @@ public sealed class AccountRecord
     public string Username { get; set; } = string.Empty;
 
     [Nullable]
-    [Column(Name = "display_name")]
-    public string DisplayName { get; set; } = string.Empty;
-
-    [Nullable]
     [Column(Name = "avatar")]
     public byte[]? Avatar { get; set; }
 

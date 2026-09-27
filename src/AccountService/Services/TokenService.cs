@@ -1,7 +1,6 @@
 using AccountService.Configuration;
 using AccountService.Contract.Models;
 using AccountService.Contracts;
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
@@ -34,7 +33,7 @@ public sealed class TokenService : ITokenService
         _publicKey = new RsaSecurityKey(publicRsa);
     }
 
-    public TokenIssueResult Issue(Guid userId, string username, string displayName, AuthProvider authProvider, string jwtId)
+    public TokenIssueResult Issue(Guid userId, string username, AuthProvider authProvider, string jwtId)
     {
         var now = DateTimeOffset.UtcNow;
         var expires = now.AddMinutes(_options.ExpiresMinutes);
@@ -44,9 +43,8 @@ public sealed class TokenService : ITokenService
             Subject = new ClaimsIdentity(
             [
                 new Claim(JwtRegisteredClaimNames.Sub, userId.ToString()),
-                new Claim(JwtRegisteredClaimNames.UniqueName, username),
+                new Claim(JwtRegisteredClaimNames.UniqueName, UsernameFormatter.FormatPublic(username)),
                 new Claim(AuthProviderClaimType, authProvider.ToString()),
-                new Claim(JwtRegisteredClaimNames.Nickname, displayName),
                 new Claim(JwtRegisteredClaimNames.Jti, jwtId),
             ]),
             Expires = expires.UtcDateTime,
