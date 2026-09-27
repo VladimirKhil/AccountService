@@ -12,6 +12,7 @@ namespace AccountService.Services;
 public sealed class TokenService : ITokenService
 {
     public const string AuthProviderClaimType = "auth_provider";
+    public const string ExternalIdClaimType = "external_id";
 
     private readonly JwtOptions _options;
     private readonly RsaSecurityKey _privateKey;
@@ -43,7 +44,7 @@ public sealed class TokenService : ITokenService
             Subject = new ClaimsIdentity(
             [
                 new Claim(JwtRegisteredClaimNames.Sub, userId.ToString()),
-                new Claim(JwtRegisteredClaimNames.NameId, externalId),
+                new Claim(ExternalIdClaimType, externalId),
                 new Claim(JwtRegisteredClaimNames.UniqueName, UsernameFormatter.FormatPublic(username)),
                 new Claim(AuthProviderClaimType, authProvider.ToString()),
                 new Claim(JwtRegisteredClaimNames.Jti, jwtId),
